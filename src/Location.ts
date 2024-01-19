@@ -1,4 +1,4 @@
-export class City {
+export class Location {
     name: string;
     longitude: number;
     latitude: number;
