@@ -16,8 +16,6 @@ async function main() {
     return response.json(weather);
   });
 
-
-
   // same function but with city name as parameter
   server.get("/city/:name", async (request, response) => {
     const name = request.params.name as string;
