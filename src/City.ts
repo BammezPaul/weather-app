@@ -8,6 +8,5 @@ export class City {
         this.longitude = longitude;
         this.latitude = latitude;
     }
-
     
 }

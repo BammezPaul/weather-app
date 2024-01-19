@@ -16,10 +16,21 @@ async function main() {
     return response.json(weather);
   });
 
-  // same function but with city name as parameter
-  server.get("/city/:name", async (request, response) => {
-    const name = request.params.name as string;
-    const resp = await Utilitaires.getListCity(name);
+  server.get("/weather/:city", async (request, response) => {
+    const city = request.params.city as string;
+    const weather = new Weather(city);
+    await weather.setCurrent();
+    return response.json(weather);
+  });
+  server.get("/locations", async (request, response) => {
+    console.log(request.query) 
+    const query = request.query
+    if (!query.name || Array.isArray(query.name)) {
+      return response.status(400).json({ error: "Missing query parameter `name`." });
+    }
+    //const name = request as string;
+    const resp = await Utilitaires.getListCity(query.name.toString());
+    
     return response.json(resp);
   });
 
