@@ -1,9 +1,8 @@
-
 import { Utilitaires } from "./Utilitaires";
 import express from "express";
 import "reflect-metadata";
 import { MongoRepository, createConnection } from "typeorm";
-import { LocationEntity } from "./entity/LocationEntity"; // Import your TypeORM entity
+import { LocationEntity } from "./entity/LocationEntity";
 import { FavoriteEntity } from "./entity/FavoriteEntity";
 let favoriteRepository: MongoRepository<FavoriteEntity>;
 const PORT = 3500;
@@ -49,12 +48,12 @@ createConnection().then(async _connection => {
       // Vérifier si l'emplacement existe déjà
       const existingFavorite = await favoriteRepository.findOne({
         where: {
-            name: name,
-            longitude: longitude,
-            latitude: latitude
+          name: name,
+          longitude: longitude,
+          latitude: latitude
         }
-    });
-    
+      });
+
       if (existingFavorite) {
         return res.status(409).json({ message: "This location is already saved" });
       }
@@ -71,34 +70,34 @@ createConnection().then(async _connection => {
   server.delete("/places/:id", async (req, res) => {
     const { id } = req.params;
     try {
-        const deleteResult = await favoriteRepository.delete(id);
-        // Utiliser `affected` pour les bases de données SQL
-        if (deleteResult.affected === 0) {
-            return res.status(404).json({ message: "Favourite not found" });
-        }
-        return res.status(200).json({ message: "Favourite deleted." });
+      const deleteResult = await favoriteRepository.delete(id);
+      // Utiliser `affected` pour les bases de données SQL
+      if (deleteResult.affected === 0) {
+        return res.status(404).json({ message: "Favourite not found" });
+      }
+      return res.status(200).json({ message: "Favourite deleted." });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "An error occured" });
+      console.error(error);
+      return res.status(500).json({ message: "An error occured" });
     }
-});
-server.get("/places/:id/forecast", async (req, res) => {
-  const { id } = req.params;
+  });
+  server.get("/places/:id/forecast", async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    const location = await locationRepository.findOne({ where: { _id: id } });
-    if (!location) {
-          return res.status(404).json({ message: "Emplacement non trouvé." });
+    try {
+      const location = await locationRepository.findOne({ where: { _id: id } });
+      if (!location) {
+        return res.status(404).json({ message: "Location not found" });
       }
 
       Utilitaires.getWeather(Number(location.latitude), Number(location.longitude));
 
 
-  } catch (error) {
+    } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Erreur lors de la récupération des prévisions météorologiques." });
-  }
-});
+      return res.status(500).json({ message: "An error occured" });
+    }
+  });
 
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}.`);
