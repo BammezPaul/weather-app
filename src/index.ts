@@ -1,29 +1,22 @@
-import { Weather } from "./Weather";
+
 import { Utilitaires } from "./Utilitaires";
 import express from "express";
-
+import "reflect-metadata";
+import { MongoRepository, createConnection } from "typeorm";
+import { LocationEntity } from "./entity/LocationEntity"; // Import your TypeORM entity
+import { FavoriteEntity } from "./entity/FavoriteEntity";
+let favoriteRepository: MongoRepository<FavoriteEntity>;
 const PORT = 3500;
-async function main() {
+createConnection().then(async _connection => {
   const server = express();
 
+  favoriteRepository = _connection.getMongoRepository(FavoriteEntity);
   server.get("/", (_request, response) => {
     return response.json({ message: "Hello world!" });
   });
 
-  server.get("/weather", async (_request, response) => {
-    const weather = new Weather("Lille");
-    await weather.setCurrent();
-    return response.json(weather);
-  });
-
-  server.get("/locations/:id/forecast", async (request, response) => {
-    const id = request.params.id as string;
-    const weather = new Weather(id);
-    await weather.setCurrent();
-    return response.json(weather);
-  });
   server.get("/locations", async (request, response) => {
-    console.log(request.query) 
+    console.log(request.query)
     const query = request.query
     if (!query.name || Array.isArray(query.name)) {
       return response.status(400).json({ error: "Missing query parameter `name`." });
@@ -33,7 +26,7 @@ async function main() {
   });
 
   server.get("/forecast", async (request, response) => {
-    console.log(request.query) 
+    console.log(request.query)
     const query = request.query
     if (!query.latitude || Array.isArray(query.latitude)) {
       return response.status(400).json({ error: "Missing query parameter `latitude`." });
@@ -42,15 +35,58 @@ async function main() {
       return response.status(400).json({ error: "Missing query parameter `longitude`." });
     }
     Utilitaires.getWeather(Number(query.latitude), Number(query.longitude));
-    
+
     return response.json();
   });
 
+  server.post("/places", async (req, res) => {
+    const { name, longitude, latitude } = req.body;
+    if (!name || longitude === undefined || latitude === undefined) {
+      return res.status(400).json({ message: "Missing parameters" });
+    }
 
+    try {
+      // Vérifier si l'emplacement existe déjà
+      const existingFavorite = await favoriteRepository.findOne({
+        where: {
+            name: name,
+            longitude: longitude,
+            latitude: latitude
+        }
+    });
+    
+      if (existingFavorite) {
+        return res.status(409).json({ message: "This location is already saved" });
+      }
+
+      const favorite = favoriteRepository.create({ name, longitude, latitude });
+      await favoriteRepository.save(favorite);
+
+      return res.status(201).json(favorite);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "An error occured" });
+    }
+  });
+  server.delete("/places/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deleteResult = await favoriteRepository.delete(id);
+        // Utiliser `affected` pour les bases de données SQL
+        if (deleteResult.affected === 0) {
+            return res.status(404).json({ message: "Favourite not found" });
+        }
+        return res.status(200).json({ message: "Favourite deleted." });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "An error occured" });
+    }
+});
 
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}.`);
   });
-}
+}).catch(error => console.log("TypeORM connection error: ", error));
 
-main();
+
+
