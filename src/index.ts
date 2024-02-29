@@ -9,7 +9,7 @@ let favoriteRepository: MongoRepository<FavoriteEntity>;
 const PORT = 3500;
 createConnection().then(async _connection => {
   const server = express();
-
+  const locationRepository = _connection.getMongoRepository(LocationEntity);
   favoriteRepository = _connection.getMongoRepository(FavoriteEntity);
   server.get("/", (_request, response) => {
     return response.json({ message: "Hello world!" });
@@ -81,6 +81,23 @@ createConnection().then(async _connection => {
         console.error(error);
         return res.status(500).json({ message: "An error occured" });
     }
+});
+server.get("/places/:id/forecast", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const location = await locationRepository.findOne({ where: { _id: id } });
+    if (!location) {
+          return res.status(404).json({ message: "Emplacement non trouvé." });
+      }
+
+      Utilitaires.getWeather(Number(location.latitude), Number(location.longitude));
+
+
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Erreur lors de la récupération des prévisions météorologiques." });
+  }
 });
 
   server.listen(PORT, () => {
