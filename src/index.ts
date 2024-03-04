@@ -71,7 +71,6 @@ createConnection().then(async _connection => {
     const { id } = req.params;
     try {
       const deleteResult = await favoriteRepository.delete(id);
-      // Utiliser `affected` pour les bases de données SQL
       if (deleteResult.affected === 0) {
         return res.status(404).json({ message: "Favourite not found" });
       }
